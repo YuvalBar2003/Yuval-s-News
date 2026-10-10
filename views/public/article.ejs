@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= article.title %> - Yuval's News</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; color: #222; line-height: 1.7; }
+    .navbar { background: #1c2331; color: white; padding: 15px 30px; }
+    .navbar a { color: white; text-decoration: none; font-weight: bold; }
+    .wrapper { max-width: 840px; margin: 30px auto; background: white; padding: 35px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .badge { background: #007bff; color: white; padding: 4px 10px; border-radius: 4px; font-size: 13px; }
+    h1 { font-size: 32px; margin: 15px 0; line-height: 1.3; }
+    .meta { font-size: 14px; color: #777; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; }
+    .cover-img { width: 100%; max-height: 440px; object-fit: cover; border-radius: 6px; margin-bottom: 25px; }
+    .summary { font-size: 19px; font-weight: bold; color: #444; margin-bottom: 25px; border-right: 4px solid #007bff; padding-right: 15px; }
+    .content { font-size: 17px; margin-bottom: 40px; white-space: pre-line; }
+    .comments-box { border-top: 2px solid #eee; padding-top: 30px; }
+    .comment-form input, .comment-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+    .btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 15px; }
+    .comment-card { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #eee; }
+    .msg-error { color: #dc3545; font-weight: bold; margin-bottom: 10px; display: none; }
+    .btn-delete-comment { background: none; border: 1px solid #dc3545; color: #dc3545; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; margin-top: 6px; }
+    .btn-delete-comment:hover { background: #dc3545; color: white; }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <a href="/">← חזרה לעמוד הראשי</a>
+  </header>
+
+  <main class="wrapper">
+    <span class="badge"><%= article.category %></span>
+    <h1><%= article.title %></h1>
+    <div class="meta">
+      <span>מאת: <strong><%= article.authorName %></strong> | <%= new Date(article.publishedAt).toLocaleDateString('he-IL') %></span>
+      <span>👁 <%= article.viewsCount %> צפיות</span>
+    </div>
+
+    <% if (article.imageUrl) { %>
+      <img src="<%= article.imageUrl %>" class="cover-img" alt="<%= article.title %>">
+    <% } %>
+
+    <p class="summary"><%= article.summary %></p>
+    <div class="content"><%= article.content %></div>
+
+    <section class="comments-box">
+      <h3>תגובות (<span id="commentsCount"><%= comments.length %></span>)</h3>
+      <div id="errorMsg" class="msg-error"></div>
+
+      <form id="commentForm" class="comment-form">
+        <input type="text" id="commentAuthor" placeholder="שם המגיב" required>
+        <textarea id="commentContent" rows="3" placeholder="כתוב תגובה..." required></textarea>
+        <button type="submit" class="btn">פרסם תגובה</button>
+      </form>
+
+      <div id="commentsList" style="margin-top: 25px;">
+        <% comments.forEach(comment => { %>
+          <div class="comment-card" id="comment-<%= comment._id %>">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong><%= comment.authorName %></strong>
+                <span style="font-size:12px; color:#888; margin-right:10px;"><%= new Date(comment.createdAt).toLocaleString('he-IL') %></span>
+              </div>
+              <% if (typeof user !== 'undefined' && user && user.role === 'editor') { %>
+                <form action="/editor/comment/delete/<%= comment._id %>" method="POST" onsubmit="return confirm('האם למחוק תגובה זו?');" style="margin: 0;">
+                  <button type="submit" class="btn-delete-comment">מחק תגובה</button>
+                </form>
+              <% } %>
+            </div>
+            <p style="margin: 8px 0 0 0;"><%= comment.content %></p>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('commentForm');
+    const errBox = document.getElementById('errorMsg');
+    const commentsList = document.getElementById('commentsList');
+    const countEl = document.getElementById('commentsCount');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errBox.style.display = 'none';
+
+      const authorName = document.getElementById('commentAuthor').value;
+      const content = document.getElementById('commentContent').value;
+
+      try {
+        const res = await fetch('/article/<%= article._id %>/comment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ authorName, content })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const div = document.createElement('div');
+          div.className = 'comment-card';
+          div.innerHTML = `
+            <strong>${data.comment.authorName}</strong>
+            <span style="font-size:12px; color:#888; margin-right:10px;">${data.comment.createdAt}</span>
+            <p style="margin: 8px 0 0 0;">${data.comment.content}</p>
+          `;
+          commentsList.prepend(div);
+          countEl.innerText = parseInt(countEl.innerText) + 1;
+          document.getElementById('commentContent').value = '';
+        } else {
+          errBox.innerText = data.message || 'שגיאה בפרסום התגובה';
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        errBox.innerText = 'שגיאת רשת בשליחת התגובה';
+        errBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

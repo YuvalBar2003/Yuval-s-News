@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>הרשמה - Yuval's News</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: #fff; padding: 30px; border-radius: 8px; width: 100%; max-width: 380px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; text-align: center; }
+    .group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+    .error { background: #ffdddd; color: #a00; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
+    p { text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>הרשמת משתמש חדש</h2>
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+    <form action="/register" method="POST">
+      <div class="group">
+        <label>שם משתמש:</label>
+        <input type="text" name="username" required>
+      </div>
+      <div class="group">
+        <label>סיסמה:</label>
+        <input type="password" name="password" required>
+      </div>
+      <div class="group">
+        <label>תפקיד:</label>
+        <select name="role">
+          <option value="reporter">כתב (Reporter)</option>
+          <option value="editor">עורך (Editor)</option>
+        </select>
+      </div>
+      <button type="submit">הירשם</button>
+    </form>
+    <p>יש לך כבר חשבון? <a href="/login">להתחברות</a></p>
+  </div>
+</body>
+</html>

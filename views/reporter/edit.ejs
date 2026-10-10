@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>עריכת כתבה - Yuval's News</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+    .status-save { font-size: 14px; color: #28a745; font-weight: bold; }
+    .group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+    textarea { resize: vertical; }
+    .btn { padding: 10px 18px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
+    .btn-submit { background: #007bff; color: white; }
+    .btn-back { background: #6c757d; color: white; text-decoration: none; display: inline-block; padding: 10px 18px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <div>
+        <a href="/reporter" class="btn-back">← חזרה לרשימה</a>
+      </div>
+      <div id="saveStatus" class="status-save">כל השינויים נשמרו</div>
+      <div>
+        <form action="/reporter/submit/<%= article._id %>" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-submit">שלח לאישור עורך 🚀</button>
+        </form>
+      </div>
+    </div>
+
+    <form id="articleForm">
+      <div class="group">
+        <label>כותרת הכתבה:</label>
+        <input type="text" id="title" value="<%= (article.status === 'published' && article.draftVersion && article.draftVersion.title) ? article.draftVersion.title : article.title %>" required>
+      </div>
+
+      <div class="group">
+        <label>קטגוריה:</label>
+        <select id="category">
+          <% const currentCat = (article.status === 'published' && article.draftVersion && article.draftVersion.category) ? article.draftVersion.category : article.category %>
+          <option value="חדשות" <%= currentCat === 'חדשות' ? 'selected' : '' %>>חדשות</option>
+          <option value="ספורט" <%= currentCat === 'ספורט' ? 'selected' : '' %>>ספורט</option>
+          <option value="כלכלה" <%= currentCat === 'כלכלה' ? 'selected' : '' %>>כלכלה</option>
+          <option value="טכנולוגיה" <%= currentCat === 'טכנולוגיה' ? 'selected' : '' %>>טכנולוגיה</option>
+          <option value="תרבות" <%= currentCat === 'תרבות' ? 'selected' : '' %>>תרבות</option>
+        </select>
+      </div>
+
+      <div class="group">
+        <label>קישור לתמונה ראשית (URL):</label>
+        <input type="text" id="imageUrl" value="<%= (article.status === 'published' && article.draftVersion && article.draftVersion.imageUrl) ? article.draftVersion.imageUrl : article.imageUrl %>">
+      </div>
+
+      <div class="group">
+        <label>תקציר קצר:</label>
+        <textarea id="summary" rows="2"><%= (article.status === 'published' && article.draftVersion && article.draftVersion.summary) ? article.draftVersion.summary : (article.summary || '') %></textarea>
+      </div>
+
+      <div class="group">
+        <label>תוכן הכתבה:</label>
+        <textarea id="content" rows="12"><%= (article.status === 'published' && article.draftVersion && article.draftVersion.content) ? article.draftVersion.content : article.content %></textarea>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const articleId = '<%= article._id %>';
+    const statusEl = document.getElementById('saveStatus');
+    let timeoutId = null;
+
+    function triggerAutoSave() {
+      statusEl.innerText = 'שומר שינויים...';
+      statusEl.style.color = '#e67e22';
+
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(async () => {
+        const payload = {
+          title: document.getElementById('title').value,
+          category: document.getElementById('category').value,
+          imageUrl: document.getElementById('imageUrl').value,
+          summary: document.getElementById('summary').value,
+          content: document.getElementById('content').value
+        };
+
+        try {
+          const res = await fetch(`/reporter/autosave/${articleId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) {
+            statusEl.innerText = `נשמר אוטומטית ב-${data.lastSaved}`;
+            statusEl.style.color = '#28a745';
+          }
+        } catch (err) {
+          statusEl.innerText = 'שגיאה בשמירה האוטומטית';
+          statusEl.style.color = '#dc3545';
+        }
+      }, 800);
+    }
+
+    document.getElementById('articleForm').addEventListener('input', triggerAutoSave);
+    document.getElementById('category').addEventListener('change', triggerAutoSave);
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>אזור הכתב - Yuval's News</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #eee; }
+    th { background: #f8f9fa; font-weight: bold; }
+    .btn { padding: 8px 14px; border-radius: 4px; text-decoration: none; border: none; cursor: pointer; font-size: 14px; display: inline-block; }
+    .btn-new { background: #28a745; color: white; }
+    .btn-edit { background: #007bff; color: white; }
+    .btn-del { background: #dc3545; color: white; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .draft { background: #e2e3e5; color: #383d41; }
+    .pending { background: #fff3cd; color: #856404; }
+    .published { background: #d4edda; color: #155724; }
+    .changes_requested { background: #f8d7da; color: #721c24; }
+    .feedback-box { background: #fff3cd; padding: 8px; border-radius: 4px; font-size: 13px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>שלום, <%= user.username %> (כתב)</h2>
+    <div>
+      <a href="/" class="btn" style="background:#007bff; color:white; margin-left:10px;">לאתר הראשי</a>
+      <form action="/reporter/new" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-new">+ כתבה חדשה</button>
+      </form>
+      <a href="/logout" class="btn" style="background:#6c757d; color:white; margin-right:10px;">התנתק</a>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>כותרת</th>
+        <th>קטגוריה</th>
+        <th>סטטוס</th>
+        <th>עודכן לאחרונה</th>
+        <th>פעולות</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (articles.length === 0) { %>
+        <tr><td colspan="5" style="text-align:center; padding: 20px;">אין לך כתבות עדיין. לחץ על "+ כתבה חדשה" כדי להתחיל!</td></tr>
+      <% } %>
+      <% articles.forEach(article => { %>
+        <tr>
+          <td>
+            <strong><%= article.title %></strong>
+            <% if (article.status === 'changes_requested' && article.editorFeedback) { %>
+              <div class="feedback-box">הערת עורך: <%= article.editorFeedback %></div>
+            <% } %>
+          </td>
+          <td><%= article.category %></td>
+          <td>
+            <% if (article.status === 'draft') { %><span class="badge draft">טיוטה</span><% } %>
+            <% if (article.status === 'pending') { %><span class="badge pending">ממתין לאישור עורך</span><% } %>
+            <% if (article.status === 'published') { %><span class="badge published">פורסם באתר</span><% } %>
+            <% if (article.status === 'changes_requested') { %><span class="badge changes_requested">נדרשים תיקונים</span><% } %>
+          </td>
+          <td><%= new Date(article.updatedAt).toLocaleString('he-IL') %></td>
+          <td>
+            <a href="/reporter/edit/<%= article._id %>" class="btn btn-edit">ערוך</a>
+            <form action="/reporter/delete/<%= article._id %>" method="POST" style="display:inline;" onsubmit="return confirm('למחוק כתבה זו?')">
+              <button type="submit" class="btn btn-del">מחק</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</body>
+</html>
